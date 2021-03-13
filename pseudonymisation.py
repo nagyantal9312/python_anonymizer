@@ -1,7 +1,7 @@
 import re
 import secrets
 import string
-from pandas import factorize, cut
+import pandas as pd
 
 
 def partition_email(email, local_part, domain_part, tld_part):
@@ -85,7 +85,7 @@ def text_to_number(df, column):
     """A paraméterként kapott DataFrame paraméterben kapott oszlopában szereplő értékeket cseréli ki számokra,
     az inkrementálás módszerét használva. Az egymással megegyező adatoknak a pszeudonimizált számértéke is
     megegyezik. """
-    df[column] = factorize(df[column])[0]
+    df[column] = pd.factorize(df[column])[0]
 
 
 def number_to_interval(distance, column, df):
@@ -97,5 +97,5 @@ def number_to_interval(distance, column, df):
     # a címkék létrehozása, 0-tól a maximum értékig, megadott távolsággal
     labels = ["{0} - {1}".format(i, i + distance - 1) for i in range(0, maximum, distance)]
     # oszlop átírása a címkéknek megfelelően
-    df[column] = cut(df.value, range(0, maximum + distance, distance), right=False, labels=labels)
+    df[column] = pd.cut(df.value, range(0, maximum + distance, distance), right=False, labels=labels)
     df[column] = df[column].astype("category")  # kategorikus adatttípusra állítja az oszlopot
