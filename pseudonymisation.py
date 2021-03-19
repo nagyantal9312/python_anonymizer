@@ -50,9 +50,11 @@ def reconstruct_email(text, local_part, domain_part, tld_part) -> str:
         return None
 
 
+#TODO: megcsinálni, hogy nan, és a kicserélt nan értékekre is illeszkedjen
 def email_multi_pseudonymise(p_df, column):
-    """A paraméterben kapott DataFrame paraméterben kapott oszlopában szereplő email címeket pszeudonimizálja a megfelelő függvények
-    meghívásával. Az email cím három részre bontódik, és mindegyik rész külön kerül pszeudonimizálásra."""
+    """A paraméterben kapott DataFrame paraméterben kapott oszlopában szereplő email címeket pszeudonimizálja a
+    megfelelő függvények meghívásával. Az email cím három részre bontódik, és mindegyik rész külön kerül
+    pszeudonimizálásra. """
 
     # a szótárakba kerülnek kulcsként az egyes email cím részek unique értékei
     local_part = dict()  # az email cím @ jel előtt álló része
@@ -97,5 +99,5 @@ def number_to_interval(distance, column, df):
     # a címkék létrehozása, 0-tól a maximum értékig, megadott távolsággal
     labels = ["{0} - {1}".format(i, i + distance - 1) for i in range(0, maximum, distance)]
     # oszlop átírása a címkéknek megfelelően
-    df[column] = pd.cut(df.value, range(0, maximum + distance, distance), right=False, labels=labels)
+    df[column] = pd.cut(df[column], range(0, maximum + distance, distance), right=False, labels=labels)
     df[column] = df[column].astype("category")  # kategorikus adatttípusra állítja az oszlopot
