@@ -2,6 +2,7 @@ import pandas as pd
 import datamanager
 import anonymisation
 import pseudonymisation
+import analysis
 
 
 
@@ -61,4 +62,7 @@ finished_t_close_partitions = anonymisation.partition_dataset\
     lambda *args: anonymisation.is_k_anonymous(*args, k=K) and anonymisation.is_t_close(*args, categorical, gf, p=P))
 
 dft = anonymisation.build_anonymized_dataset(df, finished_t_close_partitions, feature_columns, categorical)
+
+combinations = analysis.combinations_unique_percentage(df, column_names)
+
 
