@@ -4,18 +4,23 @@ import string
 import pandas as pd
 
 
+email_split_regex = re.compile(r'(.+)@(.+)\.(.+)')
+reconstruct_regex = re.compile(r"'(.+)', '(.+)', '(.+)'")
+email_nan_string = "nan@na.n"
+
+
 def partition_email(email, local_part, domain_part, tld_part):
     """Egy email címet három részre oszt fel, a @ jel és a tld végződés előtt álló pont mentén."""
     email = email.lower()
-    m = re.search(r'(.+)@(.+)\.(.+)', email)
+    m = re.search(email_split_regex, email)
     if m:
         groups = m.groups()
-        local_part.update({groups[0]: ''})
-        domain_part.update({groups[1]: ''})
-        tld_part.update({groups[2]: ''})
-        return str(groups)
     else:
-        return None
+        groups = ("nan", "na", "n")
+    local_part.update({groups[0]: ''})
+    domain_part.update({groups[1]: ''})
+    tld_part.update({groups[2]: ''})
+    return str(groups)
 
 
 def generate_text(hossz) -> str:
@@ -40,7 +45,7 @@ def add_value_to_dict(p_dict, p_set):
 
 def reconstruct_email(text, local_part, domain_part, tld_part) -> str:
     """A paraméterben kapott szótárak alapján a pszeudonimizált verzióra írja át a szöveget."""
-    m = re.search(r"'(.+)', '(.+)', '(.+)'", text)
+    m = re.search(reconstruct_regex, text)
     if m:
         groups = m.groups()
         reconstructed = str(local_part.get(groups[0])) + "@" + str(domain_part.get(groups[1])) + "." + str(tld_part.get(
