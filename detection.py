@@ -1,10 +1,12 @@
 import re
 import pandas as pd
 from unidecode import unidecode
+import ipaddress
 
 tax_regex = re.compile(r'^8[\d]{9}$')
 taj_regex = re.compile(r'^[\d]{9}$')
 personal_number_regex = re.compile(r'^[1-8]([\d]{2})(0[1-9]|1[0-2])(0[1-9]|[1-2][\d]|[3][0-1])[\d]{4}$')
+phone_number_regex = re.compile(r'^((?:\+?3|0)6)(?:-|\()?(\d{1,2})(?:-|\))?(\d{3})-?(\d{3,4})$')
 mac_regex = re.compile(r'^(([0-9A-Fa-f]{2}[-:. ]){5}[0-9A-Fa-f]{2})|(([0-9A-Fa-f]{4}[:. ]){2}[0-9A-Fa-f]{4})$')
 
 # magyar rendszamokat felismero regex, a tema szempontjabol kevesbe jelentosek kikommentezhetok
@@ -149,7 +151,21 @@ def is_hungarian_name(param: str) -> bool:
 
 
 def is_licence_plate_hungarian(param) -> bool:
+    """
+    A paraméterben kapott string magyar rendszám e.
+    :param param: az ellenőrzendő string
+    :return: True: ha magyar rendszám, False: egyébként
+    """
     return True if re.match(licence_plate_regex, param.lower()) else False
+
+
+def is_phone_number_hungarian(param):
+    """
+    A paraméterben kapott string magyar telefonszám e.
+    :param param: az ellenőrzendő string
+    :return: True: ha magyar telefonszám, False: egyébként
+    """
+    return True if re.match(phone_number_regex, param) else False
 
 
 def is_mac_address(param: str) -> bool:
@@ -159,3 +175,20 @@ def is_mac_address(param: str) -> bool:
     :return: True: ha MAC cím, False: egyébként
     """
     return True if re.match(mac_regex, param) else False
+
+
+def is_ip_address(param):
+    """
+    A paraméterben kapott string valid IP cím e.
+    :param param: az ellenőrzendő string
+    :return: True: ha valid IP cím, False: egyébként
+    """
+    try:
+        ipaddress.ip_address(param)
+        return True
+    except ValueError:
+        return False
+
+
+
+
