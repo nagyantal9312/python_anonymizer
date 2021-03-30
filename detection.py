@@ -3,10 +3,10 @@ import pandas as pd
 from unidecode import unidecode
 import ipaddress
 
-tax_regex = re.compile(r'^8[\d]{9}$')
-taj_regex = re.compile(r'^[\d]{9}$')
-personal_number_regex = re.compile(r'^[1-8]([\d]{2})(0[1-9]|1[0-2])(0[1-9]|[1-2][\d]|[3][0-1])[\d]{4}$')
-phone_number_regex = re.compile(r'^((?:\+?3|0)6)(?:[-( ])?(\d{1,2})(?:[-) ])?(\d{3})[- ]?(\d{3,4})$')
+tax_regex = re.compile(r'^8[0-9]{9}$')
+taj_regex = re.compile(r'^[0-9]{9}$')
+personal_number_regex = re.compile(r'^[1-8]([0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[1-2][0-9]|[3][0-1])[0-9]{4}$')
+phone_number_regex = re.compile(r'^(?:(?:\+?3|0)6)(?:[-( ])?(?:[0-9]{1,2})(?:[-) ])?(?:[0-9]{3})[- ]?(?:[0-9]{3,4})$')
 mac_regex = re.compile(r'^(([0-9A-Fa-f]{2}[-:. ]){5}[0-9A-Fa-f]{2})|(([0-9A-Fa-f]{4}[:. ]){2}[0-9A-Fa-f]{4})$')
 
 # magyar rendszamokat felismero regex, a tema szempontjabol kevesbe jelentosek kikommentezhetok
