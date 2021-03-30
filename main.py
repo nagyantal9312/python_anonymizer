@@ -3,6 +3,7 @@ import datamanager
 import anonymisation
 import pseudonymisation
 import analysis
+import detection
 
 
 
@@ -27,6 +28,9 @@ categorical = {'nev',
                'rendszam',
                'idopont'
                }
+
+labels_csv = pd.read_csv('data/labels.csv', index_col=None)
+labeled = detection.find_and_label(df, labels_csv)
 
 datamanager.replace_nan_values(df, categorical) # ezt azelott kell megcsinalni, mielott a kategoriakat hozzarendelem a tablazathoz, mert kesobb nem fogja engedni a modositast
 
@@ -64,5 +68,6 @@ finished_t_close_partitions = anonymisation.partition_dataset\
 dft = anonymisation.build_anonymized_dataset(df, finished_t_close_partitions, feature_columns, categorical)
 
 combinations = analysis.combinations_unique_percentage(df, column_names)
+
 
 

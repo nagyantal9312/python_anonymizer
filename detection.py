@@ -33,162 +33,220 @@ licence_plate_regex = re.compile(
 )
 
 
-def is_disease(param: str) -> bool:
+def is_disease(
+        param,
+        diseases=pd.read_csv("data/21.02_disease_list.csv", usecols=["disease_full_name"])
+):
     """
-    A paraméterben kapott string tartalmaz e betegség nevet.
-    :param param: az ellenőrzendő string
-    :return: True: ha tartalmaz, False: egyébként
+    A paraméterben kapott Series egyes értékei tartalmaznak e betegségnevet.
+    :param param: az ellenőrzendő series
+    :param diseases: a betegségeket tartalmazó csv
+    :return: egy Series, ahol az érték True: ha tartalmaz betegségnevet, False: egyébként
     """
-    diseases = pd.read_csv("data/21.02_disease_list.csv", usecols=["disease_full_name"])
+    param = param.str.lower()
+    diseases_series = diseases[diseases.columns[0]].str.lower()
 
-    param = param.lower()
-    for i in diseases.iloc[:, 0].values:
-        if i.lower() in param:
-            return True
-
-    return False
+    mask = param.apply(lambda x: any(item for item in diseases_series.values if item in x))
+    return mask
 
 
-def is_tax_number_hungarian(param: str) -> bool:
+def is_tax_number_hungarian(param):
     """
-    A paraméterben kapott string lehet e valós magyar adóazonosító. A magyar adóazonosító számokban az első számjegy a
-    konstans 8, ami a magánszemély minőségre utal. A 2-6. számjegyek a személy születési időpontja és az 1867. január 1.
-    között eltelt napok száma. A 7-9. számjegyek az azonos napon születettek megkülönböztetésére szolgáló
-    véletlenszerűen képzett szám. A 10. számjegy az 1-9. számjegyek felhasználásával készített ellenőrző összeg: ezek
-    értékeit meg kell szorozni azzal, ahányadik helyet foglalják el az azonosítón belül. A kapott szorzatok összegét el
-    kell osztani 11-gyel, és az osztás maradéka lesz a 10. számjegy.
-    :param param: az ellenőrzendő string
-    :return: True: ha valós magyar adóazonosító szám, False: egyébként
+    A paraméterben kapott Series egyes értékei magyar adószámok e.
+    :param param: az ellenőrzendő Series
+    :return: egy Series, ahol az érték True: ha magyar adószám, False: egyébként
     """
-    if not re.match(tax_regex, param):
-        return False
-    numbers = [int(x) for x in param]
-    sum = 0
-    for i in range(len(numbers) - 1):
-        sum += numbers[i] * (i + 1)
-
-    if sum % 11 != numbers[9]:
-        return False
-    return True
-
-
-def is_taj_number_hungarian(param) -> bool:
-    """
-    A paraméterben kapott string lehet e valós magyar TAJ szám. A TAJ szám 9 számjegyből áll,
-    ebből az első 8 számjegyet sorban osztják ki, a 9. számjegy pedig ellenőrző összeg. Ez úgy képződik,
-    hogy a páratlan sorszámú számejgyek értékeit hárommal, a páros sorszámúakat pedig héttel kell megszorozni. Az így
-    kapott számokat össze kell adni, majd az összeget el kell osztani tízzel, és az osztás maradéka lesz 9.
-    számjegy.
-    :param param: az ellenőrzendő string
-    :return: True: ha valós magyar TAJ szám, False: egyébként
-    """
-    if not re.match(taj_regex, param):
-        return False
-    numbers = [int(x) for x in param]
-    sum = 0
-    for i in range(len(numbers) - 1):
-        if i % 2 == 0 or i == 0:
-            sum += numbers[i] * 3
-        else:
-            sum += numbers[i] * 7
-    if sum % 10 != numbers[8]:
-        return False
-    return True
-
-
-def is_personal_number_hungarian(param) -> bool:
-    """
-    A paraméterben kapott string lehet e valós magyar személyi szám. A személyi szám első számjegye 1-8 közötti érték
-    lehet. Utána ÉÉHHNN formátumban a születési dátum következik. Ezt három számjegy követi, ami az ugyanakkor
-    születettek megkülönböztetésére szolgál. A 11. szám egy ellenőrző összeg, aminet két számítási módja van.
-    Az 1996.12.31 előtt születettek esetén az első 10 számjegy értékeit meg kell szorozni azzal a számmal,
-    ahányadik helyet elfoglalják a sorban. A kapott szorzatokat össze kell adni, majd az összeget el kell osztani
-    11-gyel, és az osztás maradéka lesz a 11. számjegy. Az 1996.12.31 után születettek esetén annyi a változás, hogy meg
-    van fordítva tehát az első számjegyet kell 10-zel szorozni ... a tizediket pedig 1-gyel.
-    :param param: az ellenőrzendő szám string alakban
-    :return: True: ha valós magyar személyi szám, False: egyébként
-    """
-    groups = re.search(personal_number_regex, param)
-    if not groups:
-        return False
-    numbers = [int(x) for x in param]
-    sum = 0
-    if int(groups[1]) > 96:
-        length = len(numbers)
-        for i in range(length - 1):
-            sum += numbers[i] * (length - 1)
-            length -= 1
-    else:
+    def check_tax_number(par):
+        """
+        Az adószám ellenőrzését végző belső függvény. A magyar adóazonosító számokban az első számjegy a konstans 8, ami
+        a magánszemély minőségre utal. A 2-6. számjegyek a személy születési időpontja és az 1867. január 1. között
+        eltelt napok száma. A 7-9. számjegyek az azonos napon születettek megkülönböztetésére szolgáló véletlenszerűen
+        képzett szám. A 10. számjegy az 1-9. számjegyek felhasználásával készített ellenőrző összeg: ezek értékeit meg
+        kell szorozni azzal, ahányadik helyet foglalják el az azonosítón belül. A kapott szorzatok összegét el kell
+        osztani 11-gyel, és az osztás maradéka lesz a 10. számjegy.
+        :param par: az ellenőrzendő érték
+        :return: True: ha magyar adószám, False: egyébként
+        """
+        if not re.match(tax_regex, par):
+            return False
+        numbers = [int(x) for x in par]
+        sum = 0
         for i in range(len(numbers) - 1):
             sum += numbers[i] * (i + 1)
-    if sum % 11 != numbers[10]:
-        return False
-    return True
+
+        if sum % 11 != numbers[9]:
+            return False
+        return True
+
+    mask = param.apply(lambda x: check_tax_number(x))
+    return mask
 
 
-def is_hungarian_name(param: str) -> bool:
+def is_taj_number_hungarian(param):
     """
-    A paraméterben kapott string tartalmaz e magyar keresztnevet.
-    :param param: az ellenőrzendő string
-    :return: True: ha tartalmaz, False: egyébként
+    A paraméterben kapott Series egyes értékei magyar TAJ számok e.
+    :param param: az ellenőrzendő Series
+    :return: egy Series, ahol az érték True: ha magyar TAJ szám, False: egyébként
     """
-    param = unidecode(param.lower())
-    female_names = pd.read_csv(filepath_or_buffer="http://www.nytud.mta.hu/oszt/nyelvmuvelo/utonevek/osszesnoi.txt",
+    def check_taj_number(par):
+        """
+        A TAJ szám ellenőrzését végző belső függvény. A TAJ szám 9 számjegyből áll, ebből az első 8 számjegyet sorban
+        osztják ki, a 9. számjegy pedig ellenőrző összeg. Ez úgy képződik, hogy a páratlan sorszámú számejgyek értékeit
+        hárommal, a páros sorszámúakat pedig héttel kell megszorozni. Az így kapott számokat össze kell adni, majd az
+        összeget el kell osztani tízzel, és az osztás maradéka lesz 9. számjegy.
+        :param par: az ellenőrzendő érték
+        :return: True: ha magyar TAJ szám, False: egyébként
+        """
+        if not re.match(taj_regex, par):
+            return False
+        numbers = [int(x) for x in par]
+        sum = 0
+        for i in range(len(numbers) - 1):
+            if i % 2 == 0 or i == 0:
+                sum += numbers[i] * 3
+            else:
+                sum += numbers[i] * 7
+        if sum % 10 != numbers[8]:
+            return False
+        return True
+
+    mask = param.apply(lambda x: check_taj_number(x))
+    return mask
+
+
+def is_personal_number_hungarian(param):
+    """
+    A paraméterben kapott Series egyes értékei magyar személyi számok e.
+    :param param: az ellenőrzendő Series
+    :return: egy Series, ahol az érték True: ha magyar személyi szám, False: egyébként
+    """
+    def check_personal_number(par):
+        """
+        A személyi szám ellenőrzést végző belső függvény. A személyi szám első számjegye 1-8 közötti érték lehet. Utána
+        ÉÉHHNN formátumban a születési dátum következik. Ezt három számjegy követi, ami az ugyanakkor születettek
+        megkülönböztetésére szolgál. A 11. szám egy ellenőrző összeg, aminet két számítási módja van. Az 1996.12.31
+        előtt születettek esetén az első 10 számjegy értékeit meg kell szorozni azzal a számmal, ahányadik helyet
+        elfoglalják a sorban. A kapott szorzatokat össze kell adni, majd az összeget el kell osztani 11-gyel, és az
+        osztás maradéka lesz a 11. számjegy. Az 1996.12.31 után születettek esetén annyi a változás, hogy meg van
+        fordítva tehát az első számjegyet kell 10-zel szorozni ... a tizediket pedig 1-gyel.
+        :param par: az ellenőrzendő érték
+        :return: True: ha magyar személyi szám, False: egyébként
+        """
+        groups = re.search(personal_number_regex, par)
+        if not groups:
+            return False
+        numbers = [int(x) for x in par]
+        sum = 0
+        if int(groups[1]) > 96:
+            length = len(numbers)
+            for i in range(length - 1):
+                sum += numbers[i] * (length - 1)
+                length -= 1
+        else:
+            for i in range(len(numbers) - 1):
+                sum += numbers[i] * (i + 1)
+        if sum % 11 != numbers[10]:
+            return False
+        return True
+
+    mask = param.apply(lambda x: check_personal_number(x))
+    return mask
+
+
+def is_hungarian_name(
+        param,
+        female_names=pd.read_csv(filepath_or_buffer="http://www.nytud.mta.hu/oszt/nyelvmuvelo/utonevek/osszesnoi.txt",
+                                 delimiter="\n", encoding="ISO-8859-1"),
+        male_names=pd.read_csv(filepath_or_buffer="http://www.nytud.mta.hu/oszt/nyelvmuvelo/utonevek/osszesffi.txt",
                                delimiter="\n", encoding="ISO-8859-1")
-
-    for i in female_names.iloc[:, 0].values:
-        if unidecode(i.lower()) in param:
-            return True
-
-    male_names = pd.read_csv(filepath_or_buffer="http://www.nytud.mta.hu/oszt/nyelvmuvelo/utonevek/osszesffi.txt",
-                             delimiter="\n", encoding="ISO-8859-1")
-
-    for i in male_names.iloc[:, 0].values:
-        if unidecode(i.lower()) in param:
-            return True
-
-    return False
-
-
-def is_licence_plate_hungarian(param) -> bool:
+):
     """
-    A paraméterben kapott string magyar rendszám e.
-    :param param: az ellenőrzendő string
-    :return: True: ha magyar rendszám, False: egyébként
+    A paraméterben kapott Series egyes értékei tartalmaznak e magyar keresztnevet.
+    :param param: az ellenőrzendő Series
+    :param female_names: női neveket tartalmazó csv
+    :param male_names: férfi neveket tartalmazó csv
+    :return: egy Series, ahol az érték True: ha tartalmaz magyar keresztnevet, False: egyébként
     """
-    return True if re.match(licence_plate_regex, param.lower()) else False
+    param = param.str.lower().apply(unidecode)
+    females = female_names[female_names.columns[0]].str.lower().apply(unidecode)
+    males = male_names[male_names.columns[0]].str.lower().apply(unidecode)
+    males = males.append(females)
+
+    mask = param.apply(lambda x: any(item for item in males.values if item in x))
+    return mask
+
+
+def is_licence_plate_hungarian(param):
+    """
+    A paraméterben kapott Series egyes értékei magyar rendszámok e.
+    :param param: az ellenőrzendő Series
+    :return: egy Series, ahol az érték True: ha magyar rendszám, False: egyébként
+    """
+    param = param.str.lower()
+    return param.str.match(licence_plate_regex)
 
 
 def is_phone_number_hungarian(param):
     """
-    A paraméterben kapott string magyar telefonszám e.
-    :param param: az ellenőrzendő string
-    :return: True: ha magyar telefonszám, False: egyébként
+    A paraméterben kapott Series egyes értékei magyar telefonszámok e.
+    :param param: az ellenőrzendő Series
+    :return: egy Series, ahol az érték True: ha magyar telefonszám, False: egyébként
     """
-    return True if re.match(phone_number_regex, param) else False
+    return param.str.match(phone_number_regex)
 
 
-def is_mac_address(param: str) -> bool:
+def is_mac_address(param):
     """
-    A paraméterben kapott string MAC cím e.
-    :param param: az ellenőrzendő string
-    :return: True: ha MAC cím, False: egyébként
+    A paraméterben kapott Series egyes értékei MAC címek e.
+    :param param: az ellenőrzendő Series
+    :return: egy Series, ahol az érték True: ha MAC cím, False: egyébként
     """
-    return True if re.match(mac_regex, param) else False
+    return param.str.match(mac_regex)
 
 
 def is_ip_address(param):
     """
-    A paraméterben kapott string valid IP cím e.
-    :param param: az ellenőrzendő string
-    :return: True: ha valid IP cím, False: egyébként
+    A paraméterben kapott Series egyes értékei IP címek e.
+    :param param: az ellenőrzendő Series
+    :return: egy Series, ahol az érték True: ha IP cím, False: egyébként
     """
-    try:
-        ipaddress.ip_address(param)
-        return True
-    except ValueError:
-        return False
+    def check_ip(par):
+        """
+        Az IP cím ellenőrzést végző belső függvény.
+        :param par: az ellenőrzendő érték
+        :return: True: ha IP cím, False: egyébként
+        """
+        try:
+            ipaddress.ip_address(par)
+            return True
+        except ValueError:
+            return False
+
+    mask = param.apply(lambda x: check_ip(x))
+    return mask
 
 
+functions_and_labels = {
+    is_tax_number_hungarian: 'tax number hungarian',
+    is_phone_number_hungarian: 'phone number hungarian',
+    is_licence_plate_hungarian: 'licence plate hungarian',
+    is_taj_number_hungarian: 'taj number hungarian',
+    is_personal_number_hungarian: 'personal number hungarian',
+    is_hungarian_name: 'hungarian first name',
+    is_disease: 'disease name',
+    is_ip_address: 'ip address',
+    is_mac_address: 'mac address'
+}
 
 
+def find_and_label(df, labels_frame):
+    for i in list(df):
+        for j in functions_and_labels:
+            result = j(df[i].dropna().map(str))
+            ratio = result.values.sum() / result.size
+
+            if ratio > 0.0:
+                new_row = pd.Series([i, ratio, functions_and_labels[j]], index=labels_frame.columns)
+                labels_frame = labels_frame.append(new_row, ignore_index=True)
+
+    return labels_frame
