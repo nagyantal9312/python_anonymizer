@@ -29,8 +29,8 @@ categorical = {'nev',
                'idopont'
                }
 
-labels_csv = pd.read_csv('data/labels.csv', index_col=None)
-labeled = detection.find_and_label(df, labels_csv)
+labels_csv = pd.read_csv('data/labels.csv', index_col=None, dtype={'identifier': 'boolean'})
+labels_csv = detection.find_and_label(df, labels_csv)
 
 datamanager.replace_nan_values(df, categorical) # ezt azelott kell megcsinalni, mielott a kategoriakat hozzarendelem a tablazathoz, mert kesobb nem fogja engedni a modositast
 

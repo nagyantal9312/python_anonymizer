@@ -2,6 +2,7 @@ import re
 import pandas as pd
 from unidecode import unidecode
 import ipaddress
+import numpy as np
 
 tax_regex = re.compile(r'^8[0-9]{9}$')
 taj_regex = re.compile(r'^[0-9]{9}$')
@@ -226,16 +227,27 @@ def is_ip_address(param):
     return mask
 
 
+def is_country_or_region(
+        param,
+        countries=pd.read_csv(
+            'https://raw.githubusercontent.com/lukes/ISO-3166-Countries-with-Regional-Codes/master/all/all.csv',
+            usecols=['name', 'alpha-2', 'alpha-3', 'region'])
+):
+    countries['name'] = countries['name'].replace(to_replace=r'[ ]\(.*?\)', value="", regex=True)
+    return param.str.lower().isin(countries.stack().str.lower())
+
+
 functions_and_labels = {
-    is_tax_number_hungarian: 'tax number hungarian',
-    is_phone_number_hungarian: 'phone number hungarian',
-    is_licence_plate_hungarian: 'licence plate hungarian',
-    is_taj_number_hungarian: 'taj number hungarian',
-    is_personal_number_hungarian: 'personal number hungarian',
-    is_hungarian_name: 'hungarian first name',
-    is_disease: 'disease name',
-    is_ip_address: 'ip address',
-    is_mac_address: 'mac address'
+    is_tax_number_hungarian: ['tax number hungarian', True],
+    is_phone_number_hungarian: ['phone number hungarian', True],
+    is_licence_plate_hungarian: ['licence plate hungarian', True],
+    is_taj_number_hungarian: ['taj number hungarian', True],
+    is_personal_number_hungarian: ['personal number hungarian', True],
+    is_hungarian_name: ['hungarian first name', np.nan],
+    is_disease: ['disease name', np.nan],
+    is_ip_address: ['ip address', np.nan],
+    is_mac_address: ['mac address', np.nan],
+    is_country_or_region: ['country or region', np.nan]
 }
 
 
@@ -246,7 +258,9 @@ def find_and_label(df, labels_frame):
             ratio = result.values.sum() / result.size
 
             if ratio > 0.0:
-                new_row = pd.Series([i, ratio, functions_and_labels[j]], index=labels_frame.columns)
+                new_row = pd.Series(
+                    [i, ratio, functions_and_labels[j][0], functions_and_labels[j][1]],
+                    index=labels_frame.columns)
                 labels_frame = labels_frame.append(new_row, ignore_index=True)
 
     return labels_frame
