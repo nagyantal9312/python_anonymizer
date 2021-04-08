@@ -50,6 +50,14 @@ def is_disease(
     return param.isin(diseases_series)
 
 
+def is_disease_hungarian(
+        param,
+        diseases_hu=pd.read_csv('data/diseases_hungarian.csv')
+):
+    param = param.str.lower().apply(unidecode)
+    return param.isin(diseases_hu['0'])
+
+
 def is_tax_number_hungarian(param):
     """
     A paraméterben kapott Series egyes értékei magyar adószámok e.
@@ -244,6 +252,7 @@ functions_and_labels = {
     is_personal_number_hungarian: ['personal number hungarian', True],
     is_hungarian_name: ['hungarian first name', np.nan],
     is_disease: ['disease name', np.nan],
+    is_disease_hungarian: ['disease name hungarian', np.nan],
     is_ip_address: ['ip address', np.nan],
     is_mac_address: ['mac address', np.nan],
     is_country_or_region: ['country or region', np.nan]
