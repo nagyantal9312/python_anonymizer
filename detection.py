@@ -47,8 +47,7 @@ def is_disease(
     param = param.str.lower()
     diseases_series = diseases[diseases.columns[0]].str.lower()
 
-    mask = param.apply(lambda x: any(item for item in diseases_series.values if item in x))
-    return mask
+    return param.isin(diseases_series)
 
 
 def is_tax_number_hungarian(param):
