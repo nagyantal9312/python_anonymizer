@@ -39,10 +39,10 @@ def is_disease(
         diseases=pd.read_csv("data/21.02_disease_list.csv", usecols=["disease_full_name"])
 ):
     """
-    A paraméterben kapott Series egyes értékei tartalmaznak e betegségnevet.
+    A paraméterben kapott Series egyes értékei betegségnevek e.
     :param param: az ellenőrzendő series
-    :param diseases: a betegségeket tartalmazó csv
-    :return: egy Series, ahol az érték True: ha tartalmaz betegségnevet, False: egyébként
+    :param diseases: a betegségeket tartalmazó csv. Forrás: https://www.targetvalidation.org/downloads/data
+    :return: egy Series, ahol az érték True: ha betegségnév, False: egyébként
     """
     param = param.str.lower()
     diseases_series = diseases[diseases.columns[0]].str.lower()
@@ -54,6 +54,12 @@ def is_disease_hungarian(
         param,
         diseases_hu=pd.read_csv('data/diseases_hungarian.csv')
 ):
+    """
+    A paraméterben kapott Series egyes értékei magyar betegségnevek e.
+    :param param: az ellenőrzendő Series
+    :param diseases_hu: a betegségeket tartalmazó csv. Forrás: https://koronavirus.gov.hu/elhunytak
+    :return: egy Series, ahol az érték True: ha magyar betegségnév, False: egyébként
+    """
     param = param.str.lower().apply(unidecode)
     return param.isin(diseases_hu['0'])
 
@@ -238,12 +244,44 @@ def is_country_or_region(
         param,
         countries=pd.read_csv(
             'https://raw.githubusercontent.com/lukes/ISO-3166-Countries-with-Regional-Codes/master/all/all.csv',
-            usecols=['name', 'alpha-2', 'alpha-3', 'region'])
+            usecols=['name', 'alpha-2', 'alpha-3'])
 ):
+    """
+    A paraméterben kapott Series egyes értékei országnevek (angol), vagy 2-3 jegyű országkódok e.
+    :param param: az ellenőrzendő Series
+    :param countries: a országokat és kódokat tartalmazó csv
+    :return: egy Series, ahol az érték True: országnév vagy kód, False: egyébként
+    """
     countries['name'] = countries['name'].replace(to_replace=r'[ ]\(.*?\)', value="", regex=True)
     return param.str.lower().isin(countries.stack().str.lower())
 
 
+def is_human_age(param):
+    """
+    A paraméterben kapott Series egyes értékei lehetnek e emberi életkorok. Feltehető, hogy az emberi életkor 0 és 129
+    év közötti. A függvény megvizsgálja a Series (oszlop) nevét, és csak akkor minősítheti életkornak a Seriest, ha a
+    név egy előre meghatározott, nagy valószínűséggel életkort tartalmazó oszlopnév-lista elemei közt már szerepel.
+    :param param: az ellenőrzendő Series
+    :return: egy Series, ahol az érték True: ha lehet emberi életkor, False: egyébként
+    """
+    possible_column_names = {"age", "kor", "eletkor"}
+
+    try:
+        maximum = int(param.max())
+        minimum = int(param.min())
+    except (ValueError, TypeError):
+        param.values[:] = False
+        return param
+
+    if param.name.lower() in possible_column_names and maximum < 130 and minimum >= 0:
+        param.values[:] = True
+    else:
+        param.values[:] = False
+
+    return param
+
+
+# a kereső függvények és a hozzájuk tartozó címkék
 functions_and_labels = {
     is_tax_number_hungarian: ['tax number hungarian', True],
     is_phone_number_hungarian: ['phone number hungarian', True],
@@ -255,11 +293,18 @@ functions_and_labels = {
     is_disease_hungarian: ['disease name hungarian', np.nan],
     is_ip_address: ['ip address', np.nan],
     is_mac_address: ['mac address', np.nan],
-    is_country_or_region: ['country or region', np.nan]
+    is_country_or_region: ['country or region', np.nan],
+    is_human_age: ['human age', np.nan]
 }
 
 
 def find_and_label(df, labels_frame):
+    """
+    Megvizsgálja a DataFramet és megmondja, hogy a program milyen típusú adatokat talál benne.
+    :param df: a vizsgálandó DataFrame
+    :param labels_frame: a DataFrame, ahová a címkézett adatok kerülnek
+    :return: a talált adatokkal kiegészített, címkéket tartalmazó DataFrame
+    """
     for i in list(df):
         for j in functions_and_labels:
             result = j(df[i].dropna().map(str))
@@ -270,5 +315,4 @@ def find_and_label(df, labels_frame):
                     [i, ratio, functions_and_labels[j][0], functions_and_labels[j][1]],
                     index=labels_frame.columns)
                 labels_frame = labels_frame.append(new_row, ignore_index=True)
-
     return labels_frame
