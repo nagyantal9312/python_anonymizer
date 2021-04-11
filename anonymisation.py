@@ -145,7 +145,7 @@ def build_anonymized_dataset(df, partitions, feature_columns, categorical, max_p
         # felsorolására
         for j in feature_columns:
             if j in categorical:
-                d[df_part[j].name] = ','.join(map(str, df_part[j].unique()))
+                d[df_part[j].name] = '|'.join(map(str, df_part[j].unique()))
             else:
                 datatype = type(d[df_part[j].name])
                 d[df_part[j].name] = datatype(df_part[j].mean())
