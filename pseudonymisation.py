@@ -6,12 +6,11 @@ import pandas as pd
 
 email_split_regex = re.compile(r'(.+)@(.+)\.(.+)')
 reconstruct_regex = re.compile(r"'(.+)', '(.+)', '(.+)'")
-email_nan_string = "nan@na.n"
 
 
 def partition_email(email, local_part, domain_part, tld_part):
     """Egy email címet három részre oszt fel, a @ jel és a tld végződés előtt álló pont mentén."""
-    email = email.lower()
+    email = str(email).lower()
     m = re.search(email_split_regex, email)
     if m:
         groups = m.groups()
@@ -55,7 +54,6 @@ def reconstruct_email(text, local_part, domain_part, tld_part) -> str:
         return None
 
 
-#TODO: megcsinálni, hogy nan, és a kicserélt nan értékekre is illeszkedjen
 def email_multi_pseudonymise(p_df, column):
     """A paraméterben kapott DataFrame paraméterben kapott oszlopában szereplő email címeket pszeudonimizálja a
     megfelelő függvények meghívásával. Az email cím három részre bontódik, és mindegyik rész külön kerül
