@@ -18,4 +18,4 @@ def replace_nan_values(df, categorical):
 
 
 def write_dataset_to_file(df, name):
-    df.to_csv(path_or_buf='data/' + name, index=False)
+    df.to_csv(path_or_buf='data/output/' + name, index=False)

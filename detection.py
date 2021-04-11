@@ -36,7 +36,7 @@ licence_plate_regex = re.compile(
 
 def is_disease(
         param,
-        diseases=pd.read_csv("data/21.02_disease_list.csv", usecols=["disease_full_name"])
+        diseases=pd.read_csv("data/local/21.02_disease_list.csv", usecols=["disease_full_name"])
 ):
     """
     A paraméterben kapott Series egyes értékei betegségnevek e.
@@ -52,7 +52,7 @@ def is_disease(
 
 def is_disease_hungarian(
         param,
-        diseases_hu=pd.read_csv('data/diseases_hungarian.csv')
+        diseases_hu=pd.read_csv('data/local/diseases_hungarian.csv')
 ):
     """
     A paraméterben kapott Series egyes értékei magyar betegségnevek e.
