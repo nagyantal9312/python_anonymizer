@@ -15,3 +15,7 @@ def replace_nan_values(df, categorical):
             df[i] = df[i].replace(pd.NA, "MISSING DATA")
         else:
             df[i].fillna(value=df[i].median(), inplace=True)
+
+
+def write_dataset_to_file(df, name):
+    df.to_csv(path_or_buf='data/' + name, index=False)
