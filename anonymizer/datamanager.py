@@ -26,7 +26,7 @@ def read_labels_file():
 
 class WorkData:
     def __init__(self, df: pd.DataFrame, sensitive_column: str, k: int, ldiv: int = None, p: float = None,
-                 column_names: tuple = None, categorical: set = None):
+                 column_names: tuple = None, categorical: set = None, feature_columns=None):
         self.df = df
         self.sensitive_column = sensitive_column
         self.k = k
@@ -38,8 +38,13 @@ class WorkData:
             self.column_names = column_names
         # TODO itt is ellenorizni a None erteket
         self.categorical = categorical
+        if feature_columns is None:
+            self.feature_columns = list(self.column_names)
+            self.feature_columns.remove(sensitive_column)
+        else:
+            self.feature_columns = feature_columns
 
     def __str__(self):
-        return ("Column names: {}\nSensitive column: {}\nCategorical columns: {}\nK: {}\nL: {}\nP: {}\n"
-                .format(self.column_names, self.sensitive_column, self.categorical, self.k, self.ldiv, self.p)
+        return ("Column names: {}\nCategorical columns: {}\nSensitive column: {}\nFeature columns: {}\nK: {}\nL: {}\nP: {}\n"
+                .format(self.column_names, self.categorical, self.sensitive_column, self.feature_columns, self.k, self.ldiv, self.p)
                 )
