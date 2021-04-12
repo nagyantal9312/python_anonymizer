@@ -9,7 +9,6 @@ def replace_nan_values(df, categorical):
     :param categorical: a DataFrame kategorikus oszlopai
     :return:
     """
-
     for i in list(df):
         if df[i].name in categorical:
             df[i] = df[i].replace(pd.NA, "MISSING DATA")
@@ -19,3 +18,7 @@ def replace_nan_values(df, categorical):
 
 def write_dataset_to_file(df, name):
     df.to_csv(path_or_buf='data/output/' + name, index=False)
+
+
+def read_labels_file():
+    return pd.read_csv('data/local/labels.csv', index_col=None, dtype={'identifier': 'boolean'})
