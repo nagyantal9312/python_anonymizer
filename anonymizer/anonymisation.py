@@ -49,71 +49,59 @@ def split(df, partition, categorical, column):
         return dfl, dfr
 
 
-def is_k_anonymous(df, partition, sensitive_column, k=3):
+def is_k_anonymous(workdata: WorkData, partition):
     """
     Megmondja, hogy teljesül-e a k-anonimitás az adott partícióra.
-    :param df: a DataFrame
+    :param workdata: a WorkData példány
     :param partition: a DataFrame egy partíciója
-    :param sensitive_column: a DataFrame szenzitív oszlopa
-    :param k: a k szám
     :return: True ha a partícióban legalább  k darab elem van, False ha kevesebb
     """
-    if len(partition) < k:
+    if len(partition) < workdata.k:
         return False
     return True
 
 
-def is_l_diverse(df, partition, sensitive_column, l=5):
+def is_l_diverse(workdata, partition):
     """
     Megmondja, hogy teljesül-e az l-diverzitás.
-    :param df: a DataFrame
+    :param workdata: a WorkData példány
     :param partition: a DataFrame partíciója
-    :param sensitive_column: a DataFrame szenzitív oszlopa
-    :param l: az egyedi értékek száma
     :return: True, ha legalább l darab egyedi érték van a szenzitív oszlopban a partíción belül, False ha kevesebb van
-    belőle
     """
-    return diversity(df, partition, sensitive_column) >= l
+    return diversity(workdata.df, partition, workdata.sensitive_column) >= workdata.ldiv
 
 
-def is_t_close(df, partition, sensitive_column, categorical, global_freqs, p=0.2):
+def is_t_close(workdata, partition, global_freqs):
     """
     Megmondja, hogy teljesül-e a t-közeliség.
-    :param df: a DataFrame
+    :param workdata: a WorkData példány
     :param partition: a DataFrame egy partíciója
-    :param sensitive_column: a DataFrame egy szenzitív oszlopa
-    :param categorical: a DataFrame kategorikus oszlopai
     :param global_freqs: az eredeti DataFrame értékeinek eloszlása
-    :param p: a szám, amire nézve viszonyítunk
     :return: True ha partícióban szereplő legnagyobb eloszlás érték legfeljebb akkora, mint a p szám, False ha nagyobb
-    nála
     """
-    if sensitive_column not in categorical:
+    if workdata.sensitive_column not in workdata.categorical:
         raise ValueError("This method only works for categorical values")
     # t-közeli, ha az adott partícióban szereplő legnagyobb eloszlási érték <= mint a paraméteres érték
     # hiszen minél nagyobb egy érték eloszlása annál inkább kiemelkedik a tömegből
-    return t_closeness(df, partition, sensitive_column, global_freqs) <= p
+    return t_closeness(workdata.df, partition, workdata.sensitive_column, global_freqs) <= workdata.p
 
 
-def partition_dataset(df, feature_columns, sensitive_column, categorical, scale, is_valid):
+def partition_dataset(workdata, scale, is_valid):
     """
     Partíciókra vágja a DataFramet.
-    :param df: a DataFrame
-    :param feature_columns: a DataFrame megváltoztatandó oszlopai
-    :param sensitive_column: a DataFrame nem megváltoztatandó oszlopa
-    :param categorical: a DataFrame kategorikus oszlopai
-    :param scale: az get_spans() függvény számára átadott paraméter
+    :param workdata: a WorkData példány
+    :param scale: a get_spans() függvény számára átadott paraméter
     :param is_valid: validációs függvény, pl. k-anonimitás, l-diverzitás, t-közeliség
     :return: a partícionált DataFrame
     """
     finished_partitions = []
-    partitions = [df.index]
+    partitions = [workdata.df.index]
     while partitions:
         partition = partitions.pop(0)
-        spans = get_spans(df[feature_columns], partition, categorical, scale)
+        spans = get_spans(workdata.df[workdata.feature_columns], partition, workdata.categorical, scale)
         for column, span in sorted(spans.items(), key=lambda x: -x[1]):
-            lp, rp = split(df, partition, categorical, column)
-            if not is_valid(df, lp, sensitive_column) or not is_valid(df, rp, sensitive_column):
+            lp, rp = split(workdata.df, partition, workdata.categorical, column)
+            if not is_valid(workdata, lp) or not is_valid(workdata, rp):
                 continue
             partitions.extend((lp, rp))
             break
@@ -122,30 +110,28 @@ def partition_dataset(df, feature_columns, sensitive_column, categorical, scale,
     return finished_partitions
 
 
-def build_anonymized_dataset(df, partitions, feature_columns, categorical, max_partitions=None):
+def build_anonymized_dataset(workdata, partitions, max_partitions=None):
     """
     Létrehozza az anonimizált DataFramet.
-    :param df: a DataFrame
-    :param partitions: a partícionált DataFrame
-    :param feature_columns: a DataFrame megváltoztatandó oszlopai
-    :param categorical: a DataFrame kategorikus oszlopai
+    :param workdata: a WorkData példány
+    :param partitions: a már partícionált DataFrame
     :param max_partitions: ha meg van adva, akkor maximum ennyi részre osztható a DataFrame
-    :return: az anonimizált DataFrame
+    :return:
     """
-    anonymized_df = pd.DataFrame(columns=df.columns)
+    anonymized_df = pd.DataFrame(columns=workdata.df.columns)
     for i, partition in enumerate(partitions):
         if max_partitions is not None and i > max_partitions:
             break
 
-        df_part = df.loc[partition]
+        df_part = workdata.df.loc[partition]
         # a d szótár tartalmazza a kulcs-érték párokat, ami alapján az átírás történik
-        d = {c: i for i, c in enumerate(feature_columns)}
+        d = {c: i for i, c in enumerate(workdata.feature_columns)}
 
         # folytonos oszlop esetén az értékek átlagára íródik át a partíció összes értéke az oszlopban, kategorikus
-        # oszlop esetén pedig a partíció adott oszlopában szereplő értékek egymástól a ',' karakterrel elválasztott
+        # oszlop esetén pedig a partíció adott oszlopában szereplő értékek egymástól a '|' karakterrel elválasztott
         # felsorolására
-        for j in feature_columns:
-            if j in categorical:
+        for j in workdata.feature_columns:
+            if j in workdata.categorical:
                 d[df_part[j].name] = '|'.join(map(str, df_part[j].unique()))
             else:
                 datatype = type(d[df_part[j].name])
@@ -209,27 +195,21 @@ def anonymise_dataset(workdata: WorkData, func: str):
     full_spans = get_spans(workdata.df, workdata.df.index, workdata.categorical)
 
     if func == 'k':
-        finished_partitions = partition_dataset(
-            workdata.df, workdata.feature_columns, workdata.sensitive_column, workdata.categorical, full_spans, (
-                lambda *args: is_k_anonymous(*args, k=workdata.k)
-            )
-        )
-        df = build_anonymized_dataset(workdata.df, finished_partitions, workdata.feature_columns, workdata.categorical)
+        finished_partitions = partition_dataset(workdata, full_spans, (lambda *args: is_k_anonymous(*args)))
+        df = build_anonymized_dataset(workdata, finished_partitions)
 
     elif func == 'l':
-        finished_l_diverse_partitions = partition_dataset(
-            workdata.df, workdata.feature_columns, workdata.sensitive_column, workdata.categorical, full_spans, (
-                lambda *args: is_k_anonymous(*args, k=workdata.k) and is_l_diverse(*args, l=workdata.ldiv)
+        finished_l_diverse_partitions = partition_dataset(workdata, full_spans, (
+            lambda *args: is_k_anonymous(*args) and is_l_diverse(*args)
             )
         )
-        df = build_anonymized_dataset(workdata.df, finished_l_diverse_partitions, workdata.feature_columns, workdata.categorical)
+        df = build_anonymized_dataset(workdata, finished_l_diverse_partitions)
 
     elif func == 't':
         freqs = get_global_freqs(workdata.df, workdata.sensitive_column)
         finished_t_close_partitions = partition_dataset(
-            workdata.df, workdata.feature_columns, workdata.sensitive_column, workdata.categorical, full_spans,
-            lambda *args: is_k_anonymous(*args, k=workdata.k) and is_t_close(*args, workdata.categorical, freqs, p=workdata.p)
+            workdata, full_spans, lambda *args: is_k_anonymous(*args) and is_t_close(*args, freqs)
         )
-        df = build_anonymized_dataset(workdata.df, finished_t_close_partitions, workdata.feature_columns, workdata.categorical)
+        df = build_anonymized_dataset(workdata, finished_t_close_partitions)
 
     return df
