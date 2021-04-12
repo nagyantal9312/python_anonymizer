@@ -21,7 +21,7 @@ def write_dataset_to_file(df, name):
 
 
 def read_labels_file():
-    return pd.read_csv('../data/local/labels.csv', index_col=None, dtype={'identifier': 'boolean'})
+    return pd.read_csv('data/local/labels.csv', index_col=None, dtype={'identifier': 'boolean'})
 
 
 class WorkData:
