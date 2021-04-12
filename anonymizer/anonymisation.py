@@ -1,4 +1,5 @@
 import pandas as pd
+from datamanager import WorkData
 
 
 def get_spans(df, partition, categorical, scale=None):
@@ -201,3 +202,34 @@ def t_closeness(df, partition, column, global_freqs):
         if d_max is None or d > d_max:
             d_max = d
     return d_max
+
+
+def anonymise_dataset(workdata: WorkData, func: str):
+
+    full_spans = get_spans(workdata.df, workdata.df.index, workdata.categorical)
+
+    if func == 'k':
+        finished_partitions = partition_dataset(
+            workdata.df, workdata.feature_columns, workdata.sensitive_column, workdata.categorical, full_spans, (
+                lambda *args: is_k_anonymous(*args, k=workdata.k)
+            )
+        )
+        df = build_anonymized_dataset(workdata.df, finished_partitions, workdata.feature_columns, workdata.categorical)
+
+    elif func == 'l':
+        finished_l_diverse_partitions = partition_dataset(
+            workdata.df, workdata.feature_columns, workdata.sensitive_column, workdata.categorical, full_spans, (
+                lambda *args: is_k_anonymous(*args, k=workdata.k) and is_l_diverse(*args, l=workdata.ldiv)
+            )
+        )
+        df = build_anonymized_dataset(workdata.df, finished_l_diverse_partitions, workdata.feature_columns, workdata.categorical)
+
+    elif func == 't':
+        freqs = get_global_freqs(workdata.df, workdata.sensitive_column)
+        finished_t_close_partitions = partition_dataset(
+            workdata.df, workdata.feature_columns, workdata.sensitive_column, workdata.categorical, full_spans,
+            lambda *args: is_k_anonymous(*args, k=workdata.k) and is_t_close(*args, workdata.categorical, freqs, p=workdata.p)
+        )
+        df = build_anonymized_dataset(workdata.df, finished_t_close_partitions, workdata.feature_columns, workdata.categorical)
+
+    return df
