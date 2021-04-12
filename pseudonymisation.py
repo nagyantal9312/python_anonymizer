@@ -104,3 +104,28 @@ def number_to_interval(distance, column, df):
     # oszlop átírása a címkéknek megfelelően
     df[column] = pd.cut(df[column], range(0, maximum + distance, distance), right=False, labels=labels)
     df[column] = df[column].astype("category")  # kategorikus adatttípusra állítja az oszlopot
+
+
+def generalize_country_to_region(
+        df,
+        param,
+        countries=pd.read_csv(
+            'https://raw.githubusercontent.com/lukes/ISO-3166-Countries-with-Regional-Codes/master/all/all.csv',
+            usecols=['name', 'alpha-2', 'alpha-3', 'region'])
+):
+    """
+    A paraméterben kapott DataFrame adott oszlopában lévő országneveket és kódokat cseréli le annak a régiónak a nevére,
+    ahol az ország található.
+    :param df: a DataFrame
+    :param param: a DataFrame oszlopának neve
+    :param countries: az országokat, kódokat, és régiókat tartalmazó file
+    :return:
+    """
+    reshaped = pd.lreshape(countries,
+                           {'country': ['name', 'alpha-2', 'alpha-3'], 'region': ['region', 'region', 'region']},
+                           dropna=False)
+    dictionary = dict(zip(reshaped['country'], reshaped['region']))
+    df[param] = df[param].map(dictionary)
+
+
+
