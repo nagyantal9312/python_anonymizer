@@ -2,6 +2,7 @@ import re
 import secrets
 import string
 import pandas as pd
+import datamanager
 
 
 email_split_regex = re.compile(r'(.+)@(.+)\.(.+)')
@@ -93,7 +94,7 @@ def text_to_number(df, column):
     df[column] = pd.factorize(df[column])[0]
 
 
-def number_to_interval(distance, column, df):
+def number_to_interval(df, column, distance=10):
     """A paraméterben kapott DataFrame paraméterben kapott oszlopában található számokat sorolja be egy
     intervallumba. Az intervallum távolságot a distance paraméter tartalamzza. Pozitív számokra működik."""
 
@@ -128,4 +129,19 @@ def generalize_country_to_region(
     df[param] = df[param].map(dictionary)
 
 
+labels_and_psudonymisation_functions = {
+    'country or region': generalize_country_to_region,
+    'human age': number_to_interval
+}
 
+
+def pseudonymise_by_label(
+        df,
+        labels_df=datamanager.read_labels_file()
+):
+    filtered = labels_df[labels_df['name'].isin(df.columns.values)]
+    filtered = filtered.to_dict('records')
+    for i in filtered:
+        for j, func in labels_and_psudonymisation_functions.items():
+            if j == i['type']:
+                func(df, df[i['name']].name)
