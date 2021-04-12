@@ -131,7 +131,8 @@ def generalize_country_to_region(
 
 labels_and_psudonymisation_functions = {
     'country or region': generalize_country_to_region,
-    'human age': number_to_interval
+    'human age': number_to_interval,
+    'email address': email_multi_pseudonymise
 }
 
 

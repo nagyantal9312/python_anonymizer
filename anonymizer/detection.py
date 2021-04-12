@@ -9,6 +9,7 @@ taj_regex = re.compile(r'^[0-9]{9}$')
 personal_number_regex = re.compile(r'^[1-8]([0-9]{2})(0[1-9]|1[0-2])(0[1-9]|[1-2][0-9]|[3][0-1])[0-9]{4}$')
 phone_number_regex = re.compile(r'^(?:(?:\+?3|0)6)(?:[-( ])?(?:[0-9]{1,2})(?:[-) ])?(?:[0-9]{3})[- ]?(?:[0-9]{3,4})$')
 mac_regex = re.compile(r'^(([0-9A-Fa-f]{2}[-:. ]){5}[0-9A-Fa-f]{2})|(([0-9A-Fa-f]{4}[:. ]){2}[0-9A-Fa-f]{4})$')
+email_regex = re.compile(r'^.+@.+\..+$')
 
 # magyar rendszamokat felismero regex, a tema szempontjabol kevesbe jelentosek kikommentezhetok
 licence_plate_regex = re.compile(
@@ -218,6 +219,15 @@ def is_mac_address(param):
     return param.str.match(mac_regex)
 
 
+def is_email_address(param):
+    """
+    A paraméterben kapott Series egyes értékei email címek e.
+    :param param: az ellenőrzendő Series
+    :return: egy Series, ahol az érték True: ha email cím, False: egyébként
+    """
+    return param.str.match(email_regex)
+
+
 def is_ip_address(param):
     """
     A paraméterben kapott Series egyes értékei IP címek e.
@@ -293,6 +303,7 @@ functions_and_labels = {
     is_disease_hungarian: ['disease name hungarian', np.nan],
     is_ip_address: ['ip address', np.nan],
     is_mac_address: ['mac address', np.nan],
+    is_email_address: ['email address', True],
     is_country_or_region: ['country or region', np.nan],
     is_human_age: ['human age', np.nan]
 }
