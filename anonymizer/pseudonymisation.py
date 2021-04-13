@@ -55,7 +55,7 @@ def reconstruct_email(text, local_part, domain_part, tld_part) -> str:
         return None
 
 
-def email_multi_pseudonymise(p_df, column):
+def email_multi_pseudonymise(workdata, column):
     """A paraméterben kapott DataFrame paraméterben kapott oszlopában szereplő email címeket pszeudonimizálja a
     megfelelő függvények meghívásával. Az email cím három részre bontódik, és mindegyik rész külön kerül
     pszeudonimizálásra. """
@@ -71,7 +71,7 @@ def email_multi_pseudonymise(p_df, column):
     pseudo_tld = set()
 
     # a szótárak kulcsainak feltöltése
-    p_df[column] = p_df[column].apply(lambda x: partition_email(x, local_part, domain_part, tld_part))
+    workdata.df[column] = workdata.df[column].apply(lambda x: partition_email(x, local_part, domain_part, tld_part))
 
     # a pszeudonimizált szövegváltozatok generálása
     generate_secret_text(pseudo_local, local_part, 10)  # 10 hosszú szöveg generálása
@@ -84,41 +84,52 @@ def email_multi_pseudonymise(p_df, column):
     add_value_to_dict(tld_part, pseudo_tld)
 
     # az eredeti email címek átírása a szótár alapján a pszeudonimizált változatra
-    p_df[column] = p_df[column].apply(lambda x: reconstruct_email(x, local_part, domain_part, tld_part))
+    workdata.df[column] = workdata.df[column].apply(lambda x: reconstruct_email(x, local_part, domain_part, tld_part))
 
 
-def text_to_number(df, column):
-    """A paraméterként kapott DataFrame paraméterben kapott oszlopában szereplő értékeket cseréli ki számokra,
-    az inkrementálás módszerét használva. Az egymással megegyező adatoknak a pszeudonimizált számértéke is
-    megegyezik. """
-    df[column] = pd.factorize(df[column])[0]
+# def text_to_number(df, column: str):
+def text_to_number(workdata, column: str):
+    """
+    A DataFrame adott oszlopában szereplő értékeket cseréli ki számokra, az inkrementálás módszerét használva. Az
+    egymással megegyező adatoknak a pszeudonimizált számértéke is megegyezik.
+    :param workdata: a WorkData példány
+    :param column: az oszlop neve
+    :return:
+    """
+    workdata.df[column] = pd.factorize(workdata.df[column])[0]
 
 
-def number_to_interval(df, column, distance=10):
-    """A paraméterben kapott DataFrame paraméterben kapott oszlopában található számokat sorolja be egy
-    intervallumba. Az intervallum távolságot a distance paraméter tartalamzza. Pozitív számokra működik."""
-
-    maximum = df[column].max()  # az oszlopban szereplő legnagyobb érték
+def number_to_interval(workdata, column: str, distance=10):
+    """
+    A DataFrame paraméterben adott oszlopában található számokat sorolja be egy intervallumba. Az intervallum távolságot
+    a distance paraméter tartalamzza. Pozitív számokra működik.
+    :param workdata: a WorkData példány
+    :param column: az oszlop neve
+    :param distance: az intervallum távolság
+    :return:
+    """
+    maximum = workdata.df[column].max()  # az oszlopban szereplő legnagyobb érték
 
     # a címkék létrehozása, 0-tól a maximum értékig, megadott távolsággal
     labels = ["{0} - {1}".format(i, i + distance - 1) for i in range(0, maximum, distance)]
     # oszlop átírása a címkéknek megfelelően
-    df[column] = pd.cut(df[column], range(0, maximum + distance, distance), right=False, labels=labels)
-    df[column] = df[column].astype("category")  # kategorikus adatttípusra állítja az oszlopot
+    workdata.df[column] = pd.cut(workdata.df[column], range(0, maximum + distance, distance), right=False, labels=labels)
+    workdata.df[column] = workdata.df[column].astype("category")  # kategorikus adatttípusra állítja az oszlopot
+    workdata.categorical.add(column)
 
 
 def generalize_country_to_region(
-        df,
-        param,
+        workdata,
+        column: str,
         countries=pd.read_csv(
             'https://raw.githubusercontent.com/lukes/ISO-3166-Countries-with-Regional-Codes/master/all/all.csv',
             usecols=['name', 'alpha-2', 'alpha-3', 'region'])
 ):
     """
-    A paraméterben kapott DataFrame adott oszlopában lévő országneveket és kódokat cseréli le annak a régiónak a nevére,
+    A DataFrame adott oszlopában lévő országneveket és kódokat cseréli le annak a régiónak a nevére,
     ahol az ország található.
-    :param df: a DataFrame
-    :param param: a DataFrame oszlopának neve
+    :param workdata: a WorkData példány, ami a DataFramet tartalmazza
+    :param column: az oszlop neve
     :param countries: az országokat, kódokat, és régiókat tartalmazó file
     :return:
     """
@@ -126,9 +137,10 @@ def generalize_country_to_region(
                            {'country': ['name', 'alpha-2', 'alpha-3'], 'region': ['region', 'region', 'region']},
                            dropna=False)
     dictionary = dict(zip(reshaped['country'], reshaped['region']))
-    df[param] = df[param].map(dictionary)
+    workdata.df[column] = workdata.df[column].map(dictionary)
 
 
+# az egyes címkékhez tartozó pszeudonimizáló függvények
 labels_and_psudonymisation_functions = {
     'country or region': generalize_country_to_region,
     'human age': number_to_interval,
@@ -136,24 +148,32 @@ labels_and_psudonymisation_functions = {
 }
 
 
-def auto_pseudonymise_by_label(
-        df,
-        labels_df=datamanager.read_labels_file()
-):
-    filtered = labels_df[labels_df['name'].isin(df.columns.values)]
+def auto_pseudonymise_by_label(workdata, labels_df=datamanager.read_labels_file()):
+    """
+    A DataFrame azon oszlopait pszeudonimizálja a megfelelő függvények hívásával, ahol az oszlopnév címkéjéhez létezik
+    specializált pszeudonimizáló függvény.
+    :param workdata: a WorkData példány
+    :param labels_df: a címkéket tartalmazó DataFrame
+    :return:
+    """
+    filtered = labels_df[labels_df['name'].isin(workdata.df.columns.values)]
     filtered = filtered.to_dict('records')
     for i in filtered:
         for j, func in labels_and_psudonymisation_functions.items():
             if j == i['type']:
-                func(df, df[i['name']].name)
+                func(workdata, workdata.df[i['name']].name)
 
 
-def auto_pseudonymise_id_data(
-        df,
-        labels_df=datamanager.read_labels_file()
-):
-    filtered = labels_df[labels_df['name'].isin(df.columns.values)]
+def auto_pseudonymise_id_data(workdata, labels_df=datamanager.read_labels_file()):
+    """
+    Pszeudonimizálja a DataFrame azon oszlopait, amelyek címkéihez nem létezik specializált pszeudonimizáló függvény.
+    Ilyenkor a text_to_number() függvény hívódik meg.
+    :param workdata: a WorkData példány
+    :param labels_df: a címkéket tartalmazó DataFrame
+    :return:
+    """
+    filtered = labels_df[labels_df['name'].isin(workdata.df.columns.values)]
     filtered = filtered.to_dict('records')
     for i in filtered:
         if i['identifier'] == True and i['type'] not in labels_and_psudonymisation_functions:
-            text_to_number(df, i['name'])
+            text_to_number(workdata, i['name'])
