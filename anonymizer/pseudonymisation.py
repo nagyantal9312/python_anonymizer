@@ -116,6 +116,7 @@ def number_to_interval(workdata, column: str, distance=10):
     workdata.df[column] = pd.cut(workdata.df[column], range(0, maximum + distance, distance), right=False, labels=labels)
     workdata.df[column] = workdata.df[column].astype("category")  # kategorikus adatttípusra állítja az oszlopot
     workdata.categorical.add(column)
+    workdata.feature_columns.remove(column)
 
 
 def generalize_country_to_region(
