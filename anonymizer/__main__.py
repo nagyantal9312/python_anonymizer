@@ -15,7 +15,7 @@ column_names = (
     'nev', 'kor', 'email', 'telefonszam', 'bankszamla', 'rendszam', 'idopont', 'koord1', 'koord2'
 )
 sensitive_column = 'nev'
-df = pd.read_csv('data/ds2.csv', index_col=False, header=None, names=column_names)
+df = pd.read_csv('data/test.csv', index_col=False, header=None, names=column_names)
 categorical = {'nev',
                'email',
                'telefonszam',
