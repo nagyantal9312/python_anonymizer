@@ -176,5 +176,5 @@ def auto_pseudonymise_id_data(workdata, labels_df=datamanager.read_labels_file()
     filtered = labels_df[labels_df['name'].isin(workdata.df.columns.values)]
     filtered = filtered.to_dict('records')
     for i in filtered:
-        if i['identifier'] == True and i['type'] not in labels_and_psudonymisation_functions:
+        if i['identifier'] is True and i['type'] not in labels_and_psudonymisation_functions:
             text_to_number(workdata, i['name'])

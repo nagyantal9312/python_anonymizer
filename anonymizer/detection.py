@@ -3,6 +3,7 @@ import pandas as pd
 from unidecode import unidecode
 import ipaddress
 import numpy as np
+import datamanager
 
 tax_regex = re.compile(r'^8[0-9]{9}$')
 taj_regex = re.compile(r'^[0-9]{9}$')
@@ -311,7 +312,8 @@ functions_and_labels = {
 
 def find_and_label(df, labels_frame):
     """
-    Megvizsgálja a DataFramet és megmondja, hogy a program milyen típusú adatokat talál benne.
+    Megvizsgálja a DataFramet és megmondja, hogy a program milyen típusú adatokat talál benne. A címkéket tartalmazó
+    filet bővíti az újonnan talált címkékkel.
     :param df: a vizsgálandó DataFrame
     :param labels_frame: a DataFrame, ahová a címkézett adatok kerülnek
     :return: a talált adatokkal kiegészített, címkéket tartalmazó DataFrame
@@ -326,4 +328,7 @@ def find_and_label(df, labels_frame):
                     [i, ratio, functions_and_labels[j][0], functions_and_labels[j][1]],
                     index=labels_frame.columns)
                 labels_frame = labels_frame.append(new_row, ignore_index=True)
+
+                labels_frame = labels_frame.drop_duplicates(ignore_index=True)
+                datamanager.write_dataset_to_file(labels_frame, 'labels.csv')
     return labels_frame
