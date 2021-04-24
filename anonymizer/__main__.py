@@ -47,7 +47,7 @@ def auto_anon_and_pseud(workdata: WorkData, func: str):
     workdata.df = anonymisation.anonymise_dataset(workdata, func)
     pseudonymisation.auto_pseudonymise_id_data(workdata, labels_csv)
 
-    datamanager.write_dataset_to_file(workdata.df, "outputtest.csv")
+    workdata.df.to_csv(path_or_buf='data/output/outputtest.csv', index=False)
     return workdata.df
 
 

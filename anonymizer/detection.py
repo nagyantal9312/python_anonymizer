@@ -330,5 +330,5 @@ def find_and_label(df, labels_frame):
                 labels_frame = labels_frame.append(new_row, ignore_index=True)
 
                 labels_frame = labels_frame.drop_duplicates(ignore_index=True)
-                datamanager.write_dataset_to_file(labels_frame, 'labels.csv')
+                labels_frame.to_csv(path_or_buf='data/local/labels.csv', index=False)
     return labels_frame

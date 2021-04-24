@@ -16,10 +16,6 @@ def replace_nan_values(df, categorical):
             df[i].fillna(value=df[i].median(), inplace=True)
 
 
-def write_dataset_to_file(df, name):
-    df.to_csv(path_or_buf='data/output/' + name, index=False)
-
-
 def read_labels_file():
     return pd.read_csv('data/local/labels.csv', index_col=None, dtype={'identifier': 'boolean'})
 
