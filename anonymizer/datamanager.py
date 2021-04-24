@@ -43,6 +43,12 @@ def read_countries():
     return countries
 
 
+def read_diseases():
+    diseases = pd.read_csv("data/local/21.02_disease_list.csv", usecols=["disease_full_name"])
+    diseases_series = diseases[diseases.columns[0]].str.lower()
+    return diseases_series
+
+
 class WorkData:
     def __init__(self, df: pd.DataFrame, sensitive_column: str, k: int, ldiv: int = None, p: float = None,
                  column_names: tuple = None, categorical: set = None, feature_columns=None):

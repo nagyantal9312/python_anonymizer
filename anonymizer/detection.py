@@ -38,7 +38,7 @@ licence_plate_regex = re.compile(
 
 def is_disease(
         param,
-        diseases=pd.read_csv("data/local/21.02_disease_list.csv", usecols=["disease_full_name"])
+        diseases=datamanager.read_diseases()
 ):
     """
     A paraméterben kapott Series egyes értékei betegségnevek e.
@@ -47,9 +47,7 @@ def is_disease(
     :return: egy Series, ahol az érték True: ha betegségnév, False: egyébként
     """
     param = param.str.lower()
-    diseases_series = diseases[diseases.columns[0]].str.lower()
-
-    return param.isin(diseases_series)
+    return param.isin(diseases)
 
 
 def is_disease_hungarian(
