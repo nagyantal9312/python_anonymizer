@@ -171,24 +171,16 @@ def is_personal_number_hungarian(param):
 
 def is_hungarian_name(
         param,
-        female_names=pd.read_csv(filepath_or_buffer="http://www.nytud.mta.hu/oszt/nyelvmuvelo/utonevek/osszesnoi.txt",
-                                 delimiter="\n", encoding="ISO-8859-1"),
-        male_names=pd.read_csv(filepath_or_buffer="http://www.nytud.mta.hu/oszt/nyelvmuvelo/utonevek/osszesffi.txt",
-                               delimiter="\n", encoding="ISO-8859-1")
+        names=datamanager.read_hungarian_names()
 ):
     """
     A paraméterben kapott Series egyes értékei tartalmaznak e magyar keresztnevet.
     :param param: az ellenőrzendő Series
-    :param female_names: női neveket tartalmazó csv
-    :param male_names: férfi neveket tartalmazó csv
+    :param names: a neveket tartalmazó csv
     :return: egy Series, ahol az érték True: ha tartalmaz magyar keresztnevet, False: egyébként
     """
     param = param.str.lower().apply(unidecode)
-    females = female_names[female_names.columns[0]].str.lower().apply(unidecode)
-    males = male_names[male_names.columns[0]].str.lower().apply(unidecode)
-    males = males.append(females)
-
-    mask = param.apply(lambda x: any(item for item in males.values if item in x))
+    mask = param.apply(lambda x: any(item for item in names.values if item in x))
     return mask
 
 

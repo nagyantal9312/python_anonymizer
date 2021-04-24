@@ -1,4 +1,5 @@
 import pandas as pd
+from unidecode import unidecode
 
 
 def replace_nan_values(df, categorical):
@@ -18,6 +19,17 @@ def replace_nan_values(df, categorical):
 
 def read_labels_file():
     return pd.read_csv('data/local/labels.csv', index_col=None, dtype={'identifier': 'boolean'})
+
+
+def read_hungarian_names():
+    female_names = pd.read_csv(filepath_or_buffer="http://www.nytud.mta.hu/oszt/nyelvmuvelo/utonevek/osszesnoi.txt",
+                               delimiter="\n", encoding="ISO-8859-1")
+    male_names = pd.read_csv(filepath_or_buffer="http://www.nytud.mta.hu/oszt/nyelvmuvelo/utonevek/osszesffi.txt",
+                             delimiter="\n", encoding="ISO-8859-1")
+    females = female_names[female_names.columns[0]].str.lower().apply(unidecode)
+    males = male_names[male_names.columns[0]].str.lower().apply(unidecode)
+    males = males.append(females)
+    return males
 
 
 class WorkData:
