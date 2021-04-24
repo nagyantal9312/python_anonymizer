@@ -245,9 +245,7 @@ def is_ip_address(param):
 
 def is_country_or_region(
         param,
-        countries=pd.read_csv(
-            'https://raw.githubusercontent.com/lukes/ISO-3166-Countries-with-Regional-Codes/master/all/all.csv',
-            usecols=['name', 'alpha-2', 'alpha-3'])
+        countries=datamanager.read_countries()
 ):
     """
     A paraméterben kapott Series egyes értékei országnevek (angol), vagy 2-3 jegyű országkódok e.
@@ -255,8 +253,7 @@ def is_country_or_region(
     :param countries: a országokat és kódokat tartalmazó csv
     :return: egy Series, ahol az érték True: országnév vagy kód, False: egyébként
     """
-    countries['name'] = countries['name'].replace(to_replace=r'[ ]\(.*?\)', value="", regex=True)
-    return param.str.lower().isin(countries.stack().str.lower())
+    return param.str.lower().isin(countries)
 
 
 def is_human_age(param):

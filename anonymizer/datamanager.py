@@ -32,6 +32,17 @@ def read_hungarian_names():
     return males
 
 
+def read_countries():
+    # TODO unidecode because of Aland
+    # TODO republic of ... etc removal
+    countries = pd.read_csv(
+        'https://raw.githubusercontent.com/lukes/ISO-3166-Countries-with-Regional-Codes/master/all/all.csv',
+        usecols=['name', 'alpha-2', 'alpha-3'])
+    countries['name'] = countries['name'].replace(to_replace=r'[ ]\(.*?\)', value="", regex=True)
+    countries = countries.stack().str.lower()
+    return countries
+
+
 class WorkData:
     def __init__(self, df: pd.DataFrame, sensitive_column: str, k: int, ldiv: int = None, p: float = None,
                  column_names: tuple = None, categorical: set = None, feature_columns=None):
