@@ -23,7 +23,7 @@ def process_disease_hu():
 
     column = column.drop_duplicates()
     column = column.sort_values()
-    column.to_csv(path_or_buf='../data/local/diseases_hungarian3.csv', index=False)
+    column.to_csv(path_or_buf='../data/local/diseases_hungarian.csv', index=False)
 
 
 process_disease_hu()
