@@ -34,7 +34,10 @@ they are generated, they DO NOT contain real data.
 The personal data detection functions can be found in __detection.py__. If the program detects personal data in a column, it saves the column name to __labels.csv__, and labels it
 based on the type of the data. Writing labels to a file is used in order to store the results for later use.
 The __pseudonymisation.py__ module does the pseudonymisation and the __anonymisation.py__ module does the anonymisation.
-The functions in __datamanager.py__ make working with datasets easier. The __analysis.py__ module can provide information to the user about the uniqueness of data in each column, and in the combination of columns. The __auto_anon_and_pseud__ function in __main.py__ automatizes the forementioned tasks. The result (anonymised dataset) is written to __data/output/outputtest.csv__ file.
+The functions in __datamanager.py__ make working with datasets easier. The __analysis.py__ module can provide information to the user about the uniqueness of data in each column, and in the combination of columns. The __auto_anon_and_pseud__ function in __main.py__ automatizes the forementioned tasks. 
+
+The result (anonymised dataset) is written to __data/output/outputtest.csv__ file.
+
 The program includes a datacrawler package, which can be used for crawling data from different websites (currently just koronavirus.gov.hu).
 
 
