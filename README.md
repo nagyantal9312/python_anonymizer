@@ -4,7 +4,7 @@
 * [The aim of this project](#the-aim-of-this-project)
 * [Technologies](#technologies)
 * [The data used](#the-data-used)
-* [How this program works](#how-the-program-works)
+* [How this program works](#how-this-program-works)
 * [The list of recognised personal data](#the-list-of-recognised-personal-data)
 * [Pseudonymisation techniques](#pseudonymisation-techniques)
 * [Anonymisation techniques](#anonymisation-techniques)
@@ -32,13 +32,10 @@ they are generated, they DO NOT contain real data.
 ## How this program works
 
 The personal data detection functions can be found in __detection.py__. If the program detects personal data in a column, it saves the column name to __labels.csv__, and labels it
-based on the type of the data. Writing to a file is used in order to store the results for later use.
+based on the type of the data. Writing labels to a file is used in order to store the results for later use.
 The __pseudonymisation.py__ module does the pseudonymisation and the __anonymisation.py__ module does the anonymisation.
-The functions in __datamanager.py__ makes working with datasets easier. The __analysis.py__ module can provide information to the user about the uniqueness of data found
-in the columns of the dataset.
-The program includes a datacrawler package, which can be used for crawling data from different websites (currently it is only used for hungarian disease names).
-
-The __auto_anon_and_pseud__ function found in __main.py__ automatizes the tasks. The result (anonymised dataset) is written into __data/output/outputtest.csv__ file.
+The functions in __datamanager.py__ make working with datasets easier. The __analysis.py__ module can provide information to the user about the uniqueness of data in each column, and in the combination of columns. The __auto_anon_and_pseud__ function in __main.py__ automatizes the forementioned tasks. The result (anonymised dataset) is written to __data/output/outputtest.csv__ file.
+The program includes a datacrawler package, which can be used for crawling data from different websites (currently just koronavirus.gov.hu).
 
 
 ## The list of recognised personal data
