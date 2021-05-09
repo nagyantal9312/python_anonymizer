@@ -52,7 +52,7 @@ def is_disease(
 
 def is_disease_hungarian(
         param,
-        diseases_hu=pd.read_csv('data/local/diseases_hungarian.csv')
+        diseases_hu=datamanager.read_hungarian_diseases()
 ):
     """
     A paraméterben kapott Series egyes értékei magyar betegségnevek e.

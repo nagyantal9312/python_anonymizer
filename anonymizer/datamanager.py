@@ -49,6 +49,11 @@ def read_diseases():
     return diseases_series
 
 
+def read_hungarian_diseases():
+    hungarian_diseases = pd.read_csv('data/local/diseases_hungarian.csv')
+    return hungarian_diseases
+
+
 class WorkData:
     def __init__(self, df: pd.DataFrame, sensitive_column: str, k: int, ldiv: int = None, p: float = None,
                  column_names: tuple = None, categorical: set = None, feature_columns=None):
